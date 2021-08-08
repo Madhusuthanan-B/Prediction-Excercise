@@ -1,28 +1,34 @@
 async function loadData() {
     const houseSalesDataSet = tf.data.csv('http://127.0.0.1:5500/kc_house_data.csv');
-    const points = houseSalesDataSet.map(record => ({ x: record.sqft_living, y: record.price }));
-    plot(await points.toArray(), 'Square Feet');
+    const pointsDataset = houseSalesDataSet.map(record => ({ x: record.sqft_living, y: record.price }));
+    const points = await pointsDataset.toArray();
+    if (points.length % 2 !== 0) {
+        points.pop();
+    }
+
+    // Shuffle data before splitting into training and testing tests.
+    // This is to ensure that we have a random selection of data
+    // This will avoid patterns in order of data
+    // Having a random order will avoid this problem
+    tf.util.shuffle(points);
+    plot(points, 'Square Feet');
 
     // Features (inputs)
-    const featureValues = await points.map(p => p.x).toArray();
+    const featureValues = points.map(p => p.x);
     const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1]);
 
-    featureTensor.print();
-
     // Labels (outputs)
-    const labelValues = await points.map(p => p.y).toArray();
+    const labelValues = points.map(p => p.y);
     const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1]);
 
     const normalizedFeatureTensor = normalize(featureTensor);
     const normalizedLabelTensor = normalize(labelTensor);
 
-    // After normalization, the orignal values will be always between 0 and 1
     normalizedFeatureTensor.tensor.print();
-    normalizedLabelTensor.tensor.print();
+    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatureTensor.tensor, 2);
+    const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabelTensor.tensor, 2);
 
-    const denormalized = deNormalize(normalizedFeatureTensor.tensor, normalizedFeatureTensor.min, normalizedFeatureTensor.max)
-    denormalized.print();
-
+    trainingFeatureTensor.print(true);
 }
 
 async function plot(pointsArray, featureName) {
