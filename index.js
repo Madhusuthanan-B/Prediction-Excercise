@@ -29,6 +29,13 @@ async function loadData() {
     const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabelTensor.tensor, 2);
 
     trainingFeatureTensor.print(true);
+
+    const model = createModel();
+    model.summary();
+
+    tfvis.show.modelSummary({name: 'Model Summary'}, model);
+    const layer = model.getLayer(undefined, 0);
+    tfvis.show.layer({name: 'Layer 1'}, layer);
 }
 
 async function plot(pointsArray, featureName) {
@@ -60,6 +67,18 @@ function deNormalize(tensor, min, max) {
     const range = max.sub(min);
     const deNormalizedTensor = tensor.mul(range).add(min);
     return deNormalizedTensor;
+}
+
+function createModel() {
+    const model = tf.sequential();
+    model.add(tf.layers.dense({
+        // Units = No of nodes in a a layer
+        units: 1,
+        useBias: true,
+        activation: 'linear',
+        inputDim: 1
+    }));
+    return model;
 }
 
 loadData();
